@@ -83,7 +83,12 @@ jobs:
           $userKey = $env:ORCH_USER_KEY
           $accountName = $env:ORCH_ACC_NAME
           $version = $env:VERSION
-
+          Write-Host "Package Path: $packagePath"
+          Write-Host "Orchestrator URL: $orchestratorUrl"
+          Write-Host "Tenant: $tenant"
+          Write-Host "User Key: $userKey"
+          Write-Host "Account Name: $accountName"
+          Write-Host "Version: $version"
           .\Scripts\UiPathDeploy.ps1 $packagePath $orchestratorUrl $tenant -UserKey $userKey -account_name $accountName -Version $version
   
   
