@@ -25,10 +25,8 @@ Param (
     [string] $destination_folder = "",    # Required. Destination folder.
     [string] $libraryOrchestratorUrl = "",# Required. The URL of the Orchestrator instance.
     [string] $libraryOrchestratorTenant = "", # (Optional, useful only for libraries) The Orchestrator tenant.
-    ...
     [string] $version = "", # Package version.
     [switch] $autoVersion, # Auto-generate package version.
-    ...
     [string] $uipathCliFilePath = "" # If not provided, the script will auto-download the cli from UiPath Public feed.
 
 )
