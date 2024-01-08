@@ -33,7 +33,7 @@ jobs:
           echo "GITHUB_SHA: ${GITHUB_SHA}"
           echo "GITHUB_REF: ${GITHUB_REF}"
   cleaner:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Runner workspace path
         run: |
