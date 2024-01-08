@@ -3,47 +3,43 @@
     Pack project into a NuGet package
 
 .DESCRIPTION 
-    This script is to pack a project into a NuGet package files (*.nupkg).
+    This script is to pack a project into NuGet package files (*.nupkg).
 
 ...
 
 #>
 Param (
-
     # Required
-    
-	[string] $project_path = "", # Required. Path to a project.json file or a folder containing project.json files.
-    [string] $destination_folder = "", # Required. Destination folder.
-	[string] $libraryOrchestratorUrl = "", # Required. The URL of the Orchestrator instance.
-	[string] $libraryOrchestratorTenant = "", #(Optional, useful only for libraries) The Orchestrator tenant.
+    [string] $project_path = "",                 # Required. Path to a project.json file or a folder containing project.json files.
+    [string] $destination_folder = "",            # Required. Destination folder.
+    [string] $libraryOrchestratorUrl = "",        # Required. The URL of the Orchestrator instance.
+    [string] $libraryOrchestratorTenant = "",     # (Optional, useful only for libraries) The Orchestrator tenant.
 
     ...
 
     # Version handling
-    [string] $version = "",                 # Package version.
-    [switch] $autoVersion,                  # Auto-generate package version.
+    [string] $version = "",                       # Package version.
+    [switch] $autoVersion,                        # Auto-generate package version.
 
     ...
 )
 # Log function
-function WriteLog
-{
-	Param ($message, [switch] $err)
+function WriteLog {
+    Param ($message, [switch] $err)
 	
-	$now = Get-Date -Format "G"
-	$line = "$now`t$message"
-	$line | Add-Content $debugLog -Encoding UTF8
-	if ($err)
-	{
-		Write-Host $line -ForegroundColor red
-	} else {
-		Write-Host $line
-	}
+    $now = Get-Date -Format "G"
+    $line = "$now`t$message"
+    $line | Add-Content $debugLog -Encoding UTF8
+    if ($err) {
+        Write-Host $line -ForegroundColor red
+    } else {
+        Write-Host $line
+    }
 }
 
 ...
 
-# Building uipath cli parameters
+# Building UiPath CLI parameters
 $ParamList = New-Object 'Collections.Generic.List[string]'
 
 ...
@@ -62,7 +58,7 @@ if ($version -ne "") {
 ...
 
 # Log CLI call with parameters
-WriteLog "Executing $uipathCLI $ParamMask"
+WriteLog "Executing $uipathCLI $($ParamList -join ' ')"
 WriteLog "-----------------------------------------------------------------------------"
 
 # Call UiPath CLI 
