@@ -86,17 +86,6 @@ jobs:
 
           .\Scripts\UiPathDeploy.ps1 $packagePath $orchestratorUrl $tenant -UserKey $userKey -account_name $accountName -Version $version
   
-  notify_slack:
-    runs-on: ubuntu-latest
-    needs: publish-uipath-nuget-package
+  
 
-    steps:
-    - name: Notify Success to Slack
-      if: success()
-      run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build and publish successful!"}' ${{ secrets.SLACK_WEBHOOK_URL }}
-
-    - name: Notify Failure to Slack
-      if: failure()
-      run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.SLACK_WEBHOOK_URL }}
+   
