@@ -61,11 +61,42 @@ jobs:
   publish-uipath-nuget-package:
     needs: build-uipath-nuget-package
     runs-on: windows-latest
-    steps: 
+    steps:
       - name: Download UiPath Artifacts
         uses: actions/download-artifact@v2
         with:
           name: Artifacts
+
+      - name: Set Package Version
+        id: set_version
+        run: |
+          $version = "$(Get-Date -Format 'yyyyMMdd.HHmmss')"
+          Write-Host "Package version: $version"
+          echo "::set-output name=version::$version"
+
       - name: Publish Nuget Package to DEV
         shell: pwsh
-        run: ${{ github.workspace }}\Scripts\UiPathDeploy.ps1 ${{ github.workspace }}\package ${{env.ORCH_URL}} ${{env.ORCH_TENANT}} -UserKey ${{env.ORCH_USER_KEY}} -account_name ${{env.ORCH_ACC_NAME}}
+        run: |
+          $packagePath = "${{ github.workspace }}/package"
+          $orchestratorUrl = $env:ORCH_URL
+          $tenant = $env:ORCH_TENANT
+          $userKey = $env:ORCH_USER_KEY
+          $accountName = $env:ORCH_ACC_NAME
+          $version = $env:VERSION
+
+          .\Scripts\UiPathDeploy.ps1 $packagePath $orchestratorUrl $tenant -UserKey $userKey -account_name $accountName -Version $version
+  
+  notify_slack:
+    runs-on: ubuntu-latest
+    needs: publish-uipath-nuget-package
+
+    steps:
+    - name: Notify Success to Slack
+      if: success()
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build and publish successful!"}' ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Notify Failure to Slack
+      if: failure()
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.SLACK_WEBHOOK_URL }}
