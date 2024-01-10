@@ -21,7 +21,7 @@ pipeline {
             steps {
                 script {
                     // Download and install UiPath CLI
-                    def uipathCliPath = tool 'uipath-cli'
+                    def uipathCliPath = 'https://uipath.visualstudio.com/Public.Feeds/_artifacts/feed/UiPath-Official/NuGet/UiPath.CLI.Windows/overview/23.10.8753.32995'
                     sh "${uipathCliPath}/uipcli pack ${PROJECT_PATH} --output output --version ${PACKAGE_VERSION}"
                 }
             }
