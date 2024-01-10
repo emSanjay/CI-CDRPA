@@ -1,103 +1,49 @@
 pipeline {
-	    agent any
-	
+    agent any
 
-	        // Environment Variables
-	        environment {
-	        MAJOR = '1'
-	        MINOR = '1'
-	        //Orchestrator Services
-	        UIPATH_ORCH_URL = "https://cloud.uipath.com/"
-	        UIPATH_ORCH_LOGICAL_NAME = "emindqzrkobt"
-	        UIPATH_ORCH_TENANT_NAME = "DefaultTenant"
-	        UIPATH_ORCH_FOLDER_NAME = "CI-CD"
-	    }
-	
+    environment {
+        PACKAGE_VERSION = '1.0.0'
+        ORCHESTRATOR_URL = 'https://cloud.uipath.com/'
+        ORCHESTRATOR_TENANT = 'DefaultTenant'
+        ORCHESTRATOR_API_KEY = 'UeHP9baEngMB_pguz2CeTFJWaFdMEpnqUy2-rev_QJmI8'
+        PROJECT_PATH = 'CI-CD'
+    }
 
-	    stages {
-	
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout your Git repository
+                checkout scm
+            }
+        }
 
-	        // Printing Basic Information
-	        stage('Preparing'){
-	            steps {
-	                echo "Jenkins Home ${env.JENKINS_HOME}"
-	                echo "Jenkins URL ${env.JENKINS_URL}"
-	                echo "Jenkins JOB Number ${env.BUILD_NUMBER}"
-	                echo "Jenkins JOB Name ${env.JOB_NAME}"
-	                echo "GitHub BranchName ${env.BRANCH_NAME}"
-	                checkout scm
-	
+        stage('Build Package') {
+            steps {
+                script {
+                    // Download and install UiPath CLI
+                    def uipathCliPath = tool 'uipath-cli'
+                    sh "${uipathCliPath}/uipcli pack ${PROJECT_PATH} --output output --version ${PACKAGE_VERSION}"
+                }
+            }
+        }
 
-	            }
-	        }
-				
-	         // Building Package
-	        stage('Build Process') {
-				when {
-					expression {
-						currentBuild.result == null || currentBuild.result == 'SUCCESS'
-						}
-				}
-				steps {
-					echo "Building package with ${WORKSPACE}"
-					UiPathPack (
-						  outputPath: "Output\\${env.BUILD_NUMBER}",
-						  projectJsonPath: "project.json",
-						  version: [$class: 'ManualVersionEntry', version: "${MAJOR}.${MINOR}.${env.BUILD_NUMBER}"],
-						  useOrchestrator: false,
-						  traceLevel: 'None'
-						)
-					}
-	        }			
-			
-	         // Deploy to Production Step
-	        stage('Deploy Process') {
-				when {
-					expression {
-						currentBuild.result == null || currentBuild.result == 'SUCCESS' 
-						}
-				}
-				steps {
-	                echo 'Deploying process to orchestrator...'
-	                UiPathDeploy (
-	                packagePath: "Output\\${env.BUILD_NUMBER}",
-	                orchestratorAddress: "${UIPATH_ORCH_URL}",
-	                orchestratorTenant: "${UIPATH_ORCH_TENANT_NAME}",
-	                folderName: "${UIPATH_ORCH_FOLDER_NAME}",
-	                environments: 'INT',
-	                //credentials: [$class: 'UserPassAuthenticationEntry', credentialsId: 'APIUserKey']
-	                credentials: Token(accountName: "${UIPATH_ORCH_LOGICAL_NAME}", credentialsId: 'mN6cMzg6qKeilic_Oks0oWsGQ4A3R0oCnkpNVGIzaKIYf'),
-					traceLevel: 'None',
-					entryPointPaths: 'Main.xaml'
-					)
-				}   
-			}	
-		
-	    }
-	
+        stage('Publish to Orchestrator') {
+            steps {
+                script {
+                    // Publish the package to Orchestrator
+                    def uipathCliPath = tool 'uipath-cli'
+                    sh "${uipathCliPath}/uipcli push output/*.nupkg --orchestrator ${ORCHESTRATOR_URL} --tenant ${ORCHESTRATOR_TENANT} --apiKey ${ORCHESTRATOR_API_KEY}"
+                }
+            }
+        }
+    }
 
-	    // Options
-	    options {
-	        // Timeout for pipeline
-	        timeout(time:80, unit:'MINUTES')
-	        skipDefaultCheckout()
-	    }
-	
-
-	
-
-	    // 
-	    post {
-	        success {
-	            echo 'Deployment has been completed!'
-	        }
-	        failure {
-	          echo "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.JOB_DISPLAY_URL})"
-	        }
-	        always {
-	            /* Clean workspace if success */
-	            cleanWs()
-	        }
-	    }
-	
-	}
+    post {
+        success {
+            echo "Package successfully built and published!"
+        }
+        failure {
+            echo "Package build or publish failed."
+        }
+    }
+}
