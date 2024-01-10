@@ -25,7 +25,7 @@ pipeline {
 	                echo "Jenkins JOB Number ${env.BUILD_NUMBER}"
 	                echo "Jenkins JOB Name ${env.JOB_NAME}"
 	                echo "GitHub BranchName ${env.BRANCH_NAME}"
-	                checkout dev/CI_CD
+	                checkout scm
 	
 
 	            }
