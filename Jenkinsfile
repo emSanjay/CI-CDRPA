@@ -21,9 +21,6 @@ pipeline {
                     echo "BUILD_NUMBER: ${BUILD_NUMBER}"
                     echo "JOB_NAME: ${JOB_NAME}"
                     echo "WORKSPACE: ${WORKSPACE}"
-                    echo "CHANGE_ID: ${CHANGE_ID}"
-                    echo "CHANGE_URL: ${CHANGE_URL}"
-                    echo "CHANGE_TITLE: ${CHANGE_TITLE}"
                 }
             }
         }
@@ -72,10 +69,13 @@ pipeline {
 
             steps {
                 script {
+                    def successMessage = '{"text":"UiPath NuGet Package build and publish successful!"}'
+                    def failureMessage = '{"text":"UiPath NuGet Package build or publish failed!"}'
+
                     if (currentBuild.resultIsBetterOrEqualTo('SUCCESS')) {
-                        sh 'curl -X POST -H "Content-type: application/json" --data "{\"text\":\"UiPath NuGet Package build and publish successful!\"}" $SLACK_WEBHOOK_URL'
+                        sh "curl -X POST -H 'Content-type: application/json' --data ${successMessage} ${SLACK_WEBHOOK_URL}"
                     } else {
-                        sh 'curl -X POST -H "Content-type: application/json" --data "{\"text\":\"UiPath NuGet Package build or publish failed!\"}" $SLACK_WEBHOOK_URL'
+                        sh "curl -X POST -H 'Content-type: application/json' --data ${failureMessage} ${SLACK_WEBHOOK_URL}"
                     }
                 }
             }
