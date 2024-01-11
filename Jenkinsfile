@@ -17,7 +17,6 @@ pipeline {
         stage('Print Details') {
             steps {
                 script {
-                    echo "Home: ${HOME}"
                     echo "BRANCH_NAME: ${BRANCH_NAME}"
                     echo "BUILD_NUMBER: ${BUILD_NUMBER}"
                     echo "JOB_NAME: ${JOB_NAME}"
@@ -89,4 +88,3 @@ pipeline {
         }
     }
 }
-
