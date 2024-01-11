@@ -1,103 +1,64 @@
 pipeline {
-	    agent any
-	
+    agent any
 
-	        // Environment Variables
-	        environment {
-	        MAJOR = '1'
-	        MINOR = '1'
-	        //Orchestrator Services
-	        UIPATH_ORCH_URL = "https://cloud.uipath.com/"
-	        UIPATH_ORCH_LOGICAL_NAME = "emindqzrkobt"
-	        UIPATH_ORCH_TENANT_NAME = "DefaultTenant"
-	        UIPATH_ORCH_FOLDER_NAME = "CI-CD"
-	    }
-	
+    environment {
+        MAJOR = '1'
+        MINOR = '1'
+        UIPATH_CLI_PATH = 'https://uipath.visualstudio.com/Public.Feeds/_artifacts/feed/UiPath-Official/NuGet/UiPath.CLI.Windows/overview/23.10.8753.32995'
+        UIPATH_ORCH_URL = "https://cloud.uipath.com/"
+        UIPATH_ORCH_LOGICAL_NAME = "emindqzrkobt"
+        UIPATH_ORCH_TENANT_NAME = "DefaultTenant"
+        UIPATH_ORCH_FOLDER_NAME = "CI-CD"
+    }
 
-	    stages {
-	
+    stages {
+        stage('Preparing') {
+            steps {
+                echo 'Checking out code...'
+                checkout scm
+            }
+        }
 
-	        // Printing Basic Information
-	        stage('Preparing'){
-	            steps {
-	                echo "Jenkins Home ${env.JENKINS_HOME}"
-	                echo "Jenkins URL ${env.JENKINS_URL}"
-	                echo "Jenkins JOB Number ${env.BUILD_NUMBER}"
-	                echo "Jenkins JOB Name ${env.JOB_NAME}"
-	                echo "GitHub BranchName ${env.BRANCH_NAME}"
-	                checkout scm
-	
+        stage('Build Process') {
+            when {
+                expression {
+                    currentBuild.result == null || currentBuild.result == 'SUCCESS'
+                }
+            }
+            steps {
+                echo "Building package with ${WORKSPACE}"
+                bat "${UIPATH_CLI_PATH}uipack.exe project.json --output \"Output\\${env.BUILD_NUMBER}\" --version ${MAJOR}.${MINOR}.${env.BUILD_NUMBER} --traceLevel None"
+            }
+        }
 
-	            }
-	        }
-				
-	         // Building Package
-	        stage('Build Process') {
-				when {
-					expression {
-						currentBuild.result == null || currentBuild.result == 'SUCCESS'
-						}
-				}
-				steps {
-					echo "Building package with ${WORKSPACE}"
-					UiPathPack (
-						  //outputPath: "Output\\${env.BUILD_NUMBER}",
-						  projectJsonPath: "project.json",
-						  version: [$class: 'ManualVersionEntry', version: "${MAJOR}.${MINOR}.${env.BUILD_NUMBER}"],
-						  useOrchestrator: true,
-						  traceLevel: 'None'
-						)
-					}
-	        }			
-			
-	         // Deploy to Production Step
-	        stage('Deploy Process') {
-				when {
-					expression {
-						currentBuild.result == null || currentBuild.result == 'SUCCESS' 
-						}
-				}
-				steps {
-	                echo 'Deploying process to orchestrator...'
-	                UiPathDeploy (
-	                packagePath: "Output\\${env.BUILD_NUMBER}",
-	                orchestratorAddress: "${UIPATH_ORCH_URL}",
-	                orchestratorTenant: "${UIPATH_ORCH_TENANT_NAME}",
-	                folderName: "${UIPATH_ORCH_FOLDER_NAME}",
-	                environments: 'INT',
-	                //credentials: [$class: 'UserPassAuthenticationEntry', credentialsId: 'APIUserKey']
-	                credentials: Token(accountName: "${UIPATH_ORCH_LOGICAL_NAME}", credentialsId: 'jvT_SkKaYoYnagIy-S0kS2cGdLdGLbR36l2epiwqL08VV'),
-					traceLevel: 'None',
-					entryPointPaths: 'Main.xaml'
-					)
-				}   
-			}	
-		
-	    }
-	
+        stage('Deploy Process') {
+            when {
+                expression {
+                    currentBuild.result == null || currentBuild.result == 'SUCCESS'
+                }
+            }
+            steps {
+                echo 'Deploying process to orchestrator...'
+                bat "${UIPATH_CLI_PATH}uipublish.exe -i \"Output\\${env.BUILD_NUMBER}\\YourPackageName.nupkg\" --orchestratorUrl ${UIPATH_ORCH_URL} --folderName ${UIPATH_ORCH_FOLDER_NAME} --tenant ${UIPATH_ORCH_TENANT_NAME} --entryPointPaths 'Main.xaml' --apiKey 'YourApiKey'"
+                // Add any additional deployment steps or notifications as needed
+            }
+        }
+    }
 
-	    // Options
-	    options {
-	        // Timeout for pipeline
-	        timeout(time:80, unit:'MINUTES')
-	        skipDefaultCheckout()
-	    }
-	
+    options {
+        timeout(time: 80, unit: 'MINUTES')
+        skipDefaultCheckout()
+    }
 
-	
-
-	    // 
-	    post {
-	        success {
-	            echo 'Deployment has been completed!'
-	        }
-	        failure {
-	          echo "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.JOB_DISPLAY_URL})"
-	        }
-	        always {
-	            /* Clean workspace if success */
-	            cleanWs()
-	        }
-	    }
-	
-	}
+    post {
+        success {
+            echo 'Deployment has been completed!'
+        }
+        failure {
+            echo "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.JOB_DISPLAY_URL})"
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
