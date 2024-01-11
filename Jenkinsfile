@@ -35,9 +35,6 @@ pipeline {
         }
 
         stage('Build UiPath NuGet Package') {
-            agent {
-                label 'windows'
-            }
 
             steps {
                 script {
