@@ -1,64 +1,92 @@
 pipeline {
     agent any
-
+    
     environment {
-        MAJOR = '1'
-        MINOR = '1'
-        UIPATH_CLI_PATH = 'https://uipath.visualstudio.com/Public.Feeds/_artifacts/feed/UiPath-Official/NuGet/UiPath.CLI.Windows/overview/23.10.8753.32995'
-        UIPATH_ORCH_URL = "https://cloud.uipath.com/"
-        UIPATH_ORCH_LOGICAL_NAME = "emindqzrkobt"
-        UIPATH_ORCH_TENANT_NAME = "DefaultTenant"
-        UIPATH_ORCH_FOLDER_NAME = "CI-CD"
+        PROJECT_NAME = 'CI-CDRPA'
+        PROJECT_FOLDER = 'CI-CD'
+        ORCH_URL = 'https://cloud.uipath.com/'
+        ORCH_TENANT = 'DefaultTenant'
+        ORCH_CLIENT_ID = '8DEv1AMNXczW3y4U15LL3jYf62jK93n5'
+        ORCH_USER_KEY = 'jvT_SkKaYoYnagIy-S0kS2cGdLdGLbR36l2epiwqL08VV'
+        ORCH_ACC_NAME = 'emindqzrkobt'
+        CLI_URL = 'https://uipath.visualstudio.com/Public.Feeds/_artifacts/feed/UiPath-Official/NuGet/UiPath.CLI.Windows/overview/23.10.8753.32995'
+        SLACK_WEBHOOK_URL = 'https://hooks.slack.com/services/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'
     }
 
     stages {
-        stage('Preparing') {
+        stage('Print Details') {
             steps {
-                echo 'Checking out code...'
-                checkout scm
-            }
-        }
-
-        stage('Build Process') {
-            when {
-                expression {
-                    currentBuild.result == null || currentBuild.result == 'SUCCESS'
+                script {
+                    echo "Home: ${HOME}"
+                    echo "BRANCH_NAME: ${BRANCH_NAME}"
+                    echo "BUILD_NUMBER: ${BUILD_NUMBER}"
+                    echo "JOB_NAME: ${JOB_NAME}"
+                    echo "WORKSPACE: ${WORKSPACE}"
+                    echo "CHANGE_ID: ${CHANGE_ID}"
+                    echo "CHANGE_URL: ${CHANGE_URL}"
+                    echo "CHANGE_TITLE: ${CHANGE_TITLE}"
                 }
             }
-            steps {
-                echo "Building package with ${WORKSPACE}"
-                bat "${UIPATH_CLI_PATH}uipack.exe project.json --output \"Output\\${env.BUILD_NUMBER}\" --version ${MAJOR}.${MINOR}.${env.BUILD_NUMBER} --traceLevel None"
-            }
         }
 
-        stage('Deploy Process') {
-            when {
-                expression {
-                    currentBuild.result == null || currentBuild.result == 'SUCCESS'
+        stage('Clean Workspace') {
+            steps {
+                script {
+                    echo "Cleaning up previous run"
+                    deleteDir()
                 }
             }
+        }
+
+        stage('Build UiPath NuGet Package') {
+            agent {
+                label 'windows'
+            }
+
             steps {
-                echo 'Deploying process to orchestrator...'
-                bat "${UIPATH_CLI_PATH}uipublish.exe -i \"Output\\${env.BUILD_NUMBER}\\YourPackageName.nupkg\" --orchestratorUrl ${UIPATH_ORCH_URL} --folderName ${UIPATH_ORCH_FOLDER_NAME} --tenant ${UIPATH_ORCH_TENANT_NAME} --entryPointPaths 'Main.xaml' --apiKey 'YourApiKey'"
-                // Add any additional deployment steps or notifications as needed
+                script {
+                    checkout scm
+                    powershell "$WORKSPACE\\Scripts\\UiPathPack.ps1 $WORKSPACE\\project.json -destination_folder $WORKSPACE\\package -autoVersion"
+                    archiveArtifacts artifacts: 'package/**/*.*', excludes: ''
+                    archiveArtifacts artifacts: 'Scripts/**/*.*', excludes: ''
+                }
             }
         }
-    }
 
-    options {
-        timeout(time: 80, unit: 'MINUTES')
-        skipDefaultCheckout()
+        stage('Publish UiPath NuGet Package') {
+            agent {
+                label 'windows'
+            }
+
+            steps {
+                script {
+                    unarchive mapping: ['Artifacts' : '.']
+                    powershell "$WORKSPACE\\Scripts\\UiPathDeploy.ps1 $WORKSPACE\\package $ORCH_URL $ORCH_TENANT -UserKey $ORCH_USER_KEY -account_name $ORCH_ACC_NAME"
+                }
+            }
+        }
+
+        stage('Notify Slack') {
+            agent {
+                label 'master'
+            }
+
+            steps {
+                script {
+                    if (currentBuild.resultIsBetterOrEqualTo('SUCCESS')) {
+                        sh 'curl -X POST -H "Content-type: application/json" --data "{\"text\":\"UiPath NuGet Package build and publish successful!\"}" $SLACK_WEBHOOK_URL'
+                    } else {
+                        sh 'curl -X POST -H "Content-type: application/json" --data "{\"text\":\"UiPath NuGet Package build or publish failed!\"}" $SLACK_WEBHOOK_URL'
+                    }
+                }
+            }
+        }
     }
 
     post {
-        success {
-            echo 'Deployment has been completed!'
-        }
-        failure {
-            echo "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.JOB_DISPLAY_URL})"
-        }
         always {
             cleanWs()
         }
     }
 }
+
