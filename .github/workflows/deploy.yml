@@ -70,7 +70,7 @@ jobs:
           else {
             echo "Error"
             }
-          fi
+        
   publish-uipath-nuget-package:
     needs: build-uipath-nuget-package
     runs-on: windows-latest
@@ -97,7 +97,7 @@ jobs:
           else {
             echo "Error"
             }
-          fi
+        
       - name: Notify Failure to Slack
         if: ${{ failure() && github.event_name == 'push' }}
         env:
@@ -109,5 +109,4 @@ jobs:
           else {
             echo "Error"
             }
-          fi
   
