@@ -78,11 +78,11 @@ jobs:
       - name: Notify Success to Slack
         if: ${{ success() && github.event_name == 'push' }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build and publish successful!"}' ${{ secrets.TEMP_WEBHOOK }}
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"Hello, World!"}'${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Notify Failure to Slack
         if: ${{ failure() && github.event_name == 'push' }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.TEMP_WEBHOOK }}
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.SLACK_WEBHOOK_URL }}
   
   
