@@ -59,10 +59,19 @@ jobs:
            package/*.*
            Scripts/*.ps1
         continue-on-error: true
+      - name: Install curl
+        run: |
+          choco install curl
       - name: Notify Failure to Slack
         if: ${{ failure() && github.event_name == 'push' }}
+        env:
+          SLACK_URL: ${{secrets.SLACK_WEBHOOK_URL }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.TEMP_WEBHOOK }}
+          if [ -n "$SLACK_URL" ]; then
+            curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' "$SLACK_URL"
+          else
+            echo "Error"
+          fi
   publish-uipath-nuget-package:
     needs: build-uipath-nuget-package
     runs-on: windows-latest
@@ -75,14 +84,27 @@ jobs:
         shell: pwsh
         run: ${{ github.workspace }}\Scripts\UiPathDeploy.ps1 ${{ github.workspace }}\package ${{env.ORCH_URL}} ${{env.ORCH_TENANT}} -UserKey ${{env.ORCH_USER_KEY}} -account_name ${{env.ORCH_ACC_NAME}}
         continue-on-error: true
+      - name: Install curl
+        run: |
+          choco install curl
       - name: Notify Success to Slack
         if: ${{ success() && github.event_name == 'push' }}
+        env:
+          SLACK_URL: ${{secrets.SLACK_WEBHOOK_URL }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"Hello, World!"}'${{ secrets.SLACK_WEBHOOK_URL }}
-
+          if [ -n "$SLACK_URL" ]; then
+            curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' "$SLACK_URL"
+          else
+            echo "Error"
+          fi
       - name: Notify Failure to Slack
         if: ${{ failure() && github.event_name == 'push' }}
+        env:
+          SLACK_URL: ${{secrets.SLACK_WEBHOOK_URL }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.SLACK_WEBHOOK_URL }}
-  
+          if [ -n "$SLACK_URL" ]; then
+            curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' "$SLACK_URL"
+          else
+            echo "Error"
+          fi
   
