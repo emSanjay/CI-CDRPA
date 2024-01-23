@@ -58,10 +58,12 @@ jobs:
           path: |
            package/*.*
            Scripts/*.ps1
+        continue-on-error: true
       - name: Notify Failure to Slack
         if: ${{ failure() && github.event_name == 'push' }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.TEMP_WEBHOOK }}
+          if [ -n "$TEMP_WEBHOOK" ]; then
+            curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.TEMP_WEBHOOK }}
   publish-uipath-nuget-package:
     needs: build-uipath-nuget-package
     runs-on: windows-latest
@@ -73,14 +75,17 @@ jobs:
       - name: Publish Nuget Package to DEV
         shell: pwsh
         run: ${{ github.workspace }}\Scripts\UiPathDeploy.ps1 ${{ github.workspace }}\package ${{env.ORCH_URL}} ${{env.ORCH_TENANT}} -UserKey ${{env.ORCH_USER_KEY}} -account_name ${{env.ORCH_ACC_NAME}}
+        continue-on-error: true
       - name: Notify Success to Slack
         if: ${{ success() && github.event_name == 'push' }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build and publish successful!"}' ${{ secrets.TEMP_WEBHOOK }}
+          if [ -n "$TEMP_WEBHOOK" ]; then
+            curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build and publish successful!"}' ${{ secrets.TEMP_WEBHOOK }}
 
       - name: Notify Failure to Slack
         if: ${{ failure() && github.event_name == 'push' }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.TEMP_WEBHOOK }}
+          if [ -n "$TEMP_WEBHOOK" ]; then
+            curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.TEMP_WEBHOOK }}
   
   
