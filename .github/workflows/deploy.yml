@@ -50,7 +50,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Build Nuget Package
         shell: pwsh
-        run: ${{ github.workspace }}\Scripts\UiPathPack.ps1 ${{ github.workspace }}\project.json -destination_folder ${{ github.workspace }}\package -autoversion
+        run: ${{ github.workspace }}\Scripts\UiPathPack.ps1 ${{ github.workspace }}\project.json -destination_folder ${{ github.workspace }}\package
       - name: Upload UiPath Artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -58,6 +58,10 @@ jobs:
           path: |
            package/*.*
            Scripts/*.ps1
+      - name: Notify Failure to Slack
+        if: ${{ failure() && github.event_name == 'push' }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.TEMP_WEBHOOK }}
   publish-uipath-nuget-package:
     needs: build-uipath-nuget-package
     runs-on: windows-latest
@@ -72,11 +76,11 @@ jobs:
       - name: Notify Success to Slack
         if: ${{ success() && github.event_name == 'push' }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build and publish successful!"}' ${{ secrets.SLACK_WEBHOOK_URL }}
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build and publish successful!"}' ${{ secrets.TEMP_WEBHOOK }}
 
       - name: Notify Failure to Slack
         if: ${{ failure() && github.event_name == 'push' }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.SLACK_WEBHOOK_URL }}
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' ${{ secrets.TEMP_WEBHOOK }}
   
   
