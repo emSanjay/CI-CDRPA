@@ -59,18 +59,17 @@ jobs:
            package/*.*
            Scripts/*.ps1
         continue-on-error: true
-      - name: Install curl
-        run: |
-          choco install curl
       - name: Notify Failure to Slack
         if: ${{ failure() && github.event_name == 'push' }}
         env:
           SLACK_URL: ${{secrets.SLACK_WEBHOOK_URL }}
         run: |
-          if [ -n "$SLACK_URL" ]; then
+          if ($env:SLACK_URL){
             curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' "$SLACK_URL"
-          else
+            }
+          else {
             echo "Error"
+            }
           fi
   publish-uipath-nuget-package:
     needs: build-uipath-nuget-package
@@ -92,19 +91,23 @@ jobs:
         env:
           SLACK_URL: ${{secrets.SLACK_WEBHOOK_URL }}
         run: |
-          if [ -n "$SLACK_URL" ]; then
+          if ($env:SLACK_URL){
             curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' "$SLACK_URL"
-          else
+            }
+          else {
             echo "Error"
+            }
           fi
       - name: Notify Failure to Slack
         if: ${{ failure() && github.event_name == 'push' }}
         env:
           SLACK_URL: ${{secrets.SLACK_WEBHOOK_URL }}
         run: |
-          if [ -n "$SLACK_URL" ]; then
+          if ($env:SLACK_URL){
             curl -X POST -H 'Content-type: application/json' --data '{"text":"UiPath NuGet Package build or publish failed!"}' "$SLACK_URL"
-          else
+            }
+          else {
             echo "Error"
+            }
           fi
   
